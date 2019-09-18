@@ -23,10 +23,10 @@ class ZBLogger(logging.Logger):
         while None != caller:
             resp = self.get_frame_details(caller)
             # print(resp["frame_details"])
-            event["stack"].append(json.dumps(resp["frame_details"]))
+            event["stack"].append(resp["frame_details"])
             # caller = None
             caller = resp["calling_frame"]
-        core.worker_pool.queue_message(json.dumps(event))
+        core.worker_pool.queue_message(event)
 
     def is_json_serializable(self, val):
         try:
@@ -38,6 +38,8 @@ class ZBLogger(logging.Logger):
     def is_internal_key(self, key):
         if key != None:
             if key.startswith("__") and key.endswith("__"):
+                return True
+            if key in ["DevTrace", "logger"]:
                 return True
         return False
 

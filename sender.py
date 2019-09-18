@@ -1,27 +1,53 @@
+import json
 import queue
 import requests
 from threading import Thread
 
 class EventPublisher:
 
-    def __init__(self, event_server_url):
+    def __init__(self):
+        self.event_server_url = None
+
+    def set_event_server_url(self, event_server_url):
         self.event_server_url = event_server_url
 
+    def set_app_name(self, app_name):
+        self.app_name = app_name
+
+    def set_client_id(self, client_id):
+        self.client_id = client_id
+
+    def set_client_auth_token(self, client_auth_token):
+        self.client_auth_token = client_auth_token
+
     def publish(self, message):
-        print("Got message: {}".format(message))
+        message["app_name"] = self.app_name
+        print("Got message: {}".format(json.dumps(message)))
 
 class EventWorker(Thread):
 
     def __init__(self, q):
         super(EventWorker, self).__init__()
         self.q = q
-        self.publisher = EventPublisher("")
+        self.publisher = EventPublisher()
         self.daemon = True
         self.should_stop = False
         self.start()
 
     def stop(self):
         self.should_stop = True
+
+    def set_event_server_url(self, event_server_url):
+        self.publisher.set_event_server_url(event_server_url)
+
+    def set_app_name(self, app_name):
+        self.publisher.set_app_name(app_name)
+
+    def set_client_id(self, client_id):
+        self.publisher.set_client_id(client_id)
+
+    def set_client_auth_token(self, client_auth_token):
+        self.publisher.set_client_auth_token(client_auth_token)
 
     def run(self):
         while self.should_stop == False:
@@ -47,6 +73,22 @@ class WorkerPool(object):
 
     def queue_message(self, message):
         self.q.put(message)
+
+    def set_event_server_url(self, event_server_url):
+        for worker in self.workers:
+            worker.set_event_server_url(event_server_url)
+
+    def set_app_name(self, app_name):
+        for worker in self.workers:
+            worker.set_app_name(app_name)
+
+    def set_client_id(self, client_id):
+        for worker in self.workers:
+            worker.set_client_id(client_id)
+
+    def set_client_auth_token(self, client_auth_token):
+        for worker in self.workers:
+            worker.set_client_auth_token(client_auth_token)
 
     def stop(self):
         for worker in self.workers:
