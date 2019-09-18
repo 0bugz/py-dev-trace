@@ -1,0 +1,4 @@
+project_scaffold.py
+*.pyc
+*.bak
+.DS_Store
