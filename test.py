@@ -1,16 +1,26 @@
 import os
+import sys
+import time
 import logging
 
-from core import DevTrace
+from dev_trace import DevTrace
 
 os.environ['ZBLOGGER_APP_NAME'] = "Test App"
 os.environ['ZBLOGGER_CLIENT_ID'] = "AxERTyZ6"
 os.environ['ZBLOGGER_CLIENT_AUTH_TOKEN'] = "1234x678890123deZsqWert"
-os.environ['ZBLOGGER_EVENT_SERVER_URL'] = "http://localhost:7123"
+os.environ['ZBLOGGER_EVENT_SERVER_URL'] = "http://localhost:7011/echo"
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+
+logger = logging.getLogger("inspect_tests")
+logger.addHandler(handler)
+
+dt_logger = logging.getLogger("zblogger")
+dt_logger.addHandler(handler)
 
 dt = DevTrace()
 # dt = DevTrace(app_name="Test App", client_id="AxERTyZ6", client_auth_token="1234x678890123deZsqWert", event_server_url="http://localhost:7123")
-logger = logging.getLogger("inspect_tests")
 
 class Test:
 
@@ -26,8 +36,9 @@ class Test:
         l_v2 = 1.23
         self.deep_call_level_1("l_v3_1")
 
-num_iterations = 100000
-# num_iterations = 10
+# num_iterations = 100000
+num_iterations = 10
 t = Test('L', 'G')
 for i in range(num_iterations):
     t.hello_world()
+time.sleep(60)

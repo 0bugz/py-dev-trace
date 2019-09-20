@@ -6,7 +6,10 @@ import logging
 import threading
 import datetime
 
-import core
+from .core import ip_address
+from .core import worker_pool
+
+logger = logging.getLogger('zblogger')
 
 EPOCH = datetime.datetime(1970, 1, 1)
 
@@ -18,24 +21,21 @@ def get_millis_since_epoch():
 class ZBLogger(logging.Logger):
 
     def error(self, msg, *args, **kwargs):
-        super().error(msg, *args, **kwargs)
-        print("ZBLogger error invoked ...: {}".format(msg))
+        super(ZBLogger, self).error(msg, *args, **kwargs)
         frame = inspect.currentframe()
         # The current frame is our frame - let us ignore it :)
         event = {
             "timestamp_ms": get_millis_since_epoch(),
-            "ip_address": core.ip_address,
+            "ip_address": ip_address,
             "thread_name":threading.currentThread().name,
             "stack":[]
         }
         caller = frame.f_back
         while None != caller:
             resp = self.get_frame_details(caller)
-            # print(resp["frame_details"])
             event["stack"].append(resp["frame_details"])
-            # caller = None
             caller = resp["calling_frame"]
-        core.worker_pool.queue_message(event)
+        worker_pool.queue_message(event)
 
     def is_json_serializable(self, val):
         try:
@@ -44,11 +44,15 @@ class ZBLogger(logging.Logger):
         except:
             return False
 
-    def is_internal_key(self, key):
+    def is_internal_key(self, key, value):
         if key != None:
             if key.startswith("__") and key.endswith("__"):
                 return True
             if key in ["DevTrace", "logger"]:
+                return True
+            if isinstance(value, logging.Logger):
+                return True
+            if isinstance(value, logging.Handler):
                 return True
         return False
 
@@ -58,7 +62,7 @@ class ZBLogger(logging.Logger):
             if not inspect.ismodule(obj) and hasattr(obj, "__dict__"):
                 attributes = obj.__dict__
                 for k, v in attributes.items():
-                    if not self.is_internal_key(k):
+                    if not self.is_internal_key(k, v):
                         if self.is_json_serializable(v):
                             ret_val[k] = v
                         else:
@@ -70,7 +74,7 @@ class ZBLogger(logging.Logger):
     def get_variable_dict(self, frame_vars):
         ret_val = {}
         for k, v in frame_vars:
-            if not self.is_internal_key(k):
+            if not self.is_internal_key(k, v):
                 if self.is_json_serializable(v):
                     ret_val[k] = v
                 else:

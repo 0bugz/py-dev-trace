@@ -1,10 +1,12 @@
 import os
+import sys
 import atexit
 import logging
 import socket
 
-from sender import WorkerPool
-from zblogger import ZBLogger
+from .sender import WorkerPool
+
+logger = logging.getLogger('zblogger')
 
 worker_pool = WorkerPool(pool_size=3)
 ip_address = "127.0.0.1"
@@ -40,10 +42,8 @@ class DevTrace:
         worker_pool.set_client_id(client_id)
         worker_pool.set_client_auth_token(client_auth_token)
         worker_pool.set_event_server_url(event_server_url)
-
-        logging.setLoggerClass(ZBLogger)
         atexit.register(self.stop)
 
     def stop(self):
-        print("Dev trace stopping ...")
+        logger.debug("Dev trace stopping ...")
         worker_pool.stop()

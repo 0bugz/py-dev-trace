@@ -1,7 +1,11 @@
+import sys
 import json
 import queue
+import logging
 import requests
 from threading import Thread
+
+logger = logging.getLogger('zblogger')
 
 class EventPublisher:
 
@@ -22,7 +26,10 @@ class EventPublisher:
 
     def publish(self, message):
         message["app_name"] = self.app_name
-        print("Got message: {}".format(json.dumps(message)))
+        msg_str = "Got message: {}".format(json.dumps(message))
+        logger.debug(msg_str)
+        resp = requests.post(self.event_server_url, json=message)
+        assert(resp.status_code == 200)
 
 class EventWorker(Thread):
 
@@ -56,11 +63,11 @@ class EventWorker(Thread):
                 try:
                     self.publisher.publish(message)
                 except Exception as e1:
-                    print("Exception publishing message: {}".format(e1))
+                    logger.error("Exception publishing message: {}".format(e1))
                 finally:
                     self.q.task_done()
             except Exception as e:
-                print("Exception occured: {}".format(e))
+                logger.error("Exception occured: {}".format(e))
 
 class WorkerPool(object):
 
